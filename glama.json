@@ -1,0 +1,10 @@
+{
+  "name": "goose-mcp",
+  "description": "MCP server wrapping the goose CLI — start sessions, run recipes, inspect providers and extensions. Includes a Vite/React webapp dashboard.",
+  "author": "sandraschi",
+  "license": "MIT",
+  "homepage": "https://github.com/sandraschi/goose-mcp",
+  "repository": "https://github.com/sandraschi/goose-mcp",
+  "tags": ["goose", "agent", "cli", "sessions", "recipes", "ollama"],
+  "category": "productivity"
+}

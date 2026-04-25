@@ -1,0 +1,32 @@
+# goose-mcp
+
+MCP server wrapping the goose CLI.
+
+## Tools
+
+- goose_version — check goose binary version and availability
+- goose_session_start — start a goose session with a text prompt
+- goose_session_status — get status and output of a session by id
+- goose_session_list — list recent sessions with status summary
+- goose_recipe_run — run a goose YAML recipe file by path
+- goose_providers_list — list configured providers from goose config
+- goose_extensions_list — list active extensions from goose config
+- show_sessions_card — Prefab UI card: recent sessions
+- show_goose_status_card — Prefab UI card: goose status summary
+
+## Prompts
+
+- goose_fleet_task_template — template for delegating fleet tasks to goose
+
+## Resources
+
+- goose://sessions/list — JSON list of all sessions
+
+## Webapp
+
+Dashboard at http://localhost:10949 — Sessions, Recipes, Providers, Extensions, Tools, Chat (Ollama auto-detect), Status.
+
+## Config
+
+Set GOOSE_BIN env var if goose is not on PATH.
+Backend: 10948 | Frontend: 10949 | MCP: http://localhost:10948/mcp

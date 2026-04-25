@@ -1,0 +1,59 @@
+# goose-mcp — Full LLM Reference
+
+## Architecture
+
+FastMCP 3.2 MCP server (stdio + ASGI HTTP /mcp) + Starlette 1.0 REST backend + Vite/React webapp.
+No Pydantic. No FastAPI.
+
+## Tool signatures
+
+goose_version(ctx) -> dict
+  Returns: {available: bool, raw: str, bin_path: str}
+
+goose_session_start(ctx, prompt: str, provider: str = "", model: str = "") -> dict
+  Returns: {id: str, status: str, pid: int, started_at: str}
+
+goose_session_status(ctx, session_id: str) -> dict
+  Returns: full SessionRecord dict with output (last 4k)
+
+goose_session_list(ctx, limit: int = 20) -> dict
+  Returns: {sessions: [...], count: int}
+
+goose_recipe_run(ctx, recipe_path: str) -> dict
+  Returns: {id: str, status: str, recipe: str}
+
+goose_providers_list(ctx) -> dict
+  Returns: {providers: [...], count: int}
+
+goose_extensions_list(ctx) -> dict
+  Returns: {extensions: [...], count: int}
+
+## REST API
+
+GET  /api/health           -> {status: "ok"}
+GET  /api/capabilities     -> feature flags
+GET  /api/version          -> goose version info
+GET  /api/sessions         -> session list (?limit=N)
+GET  /api/sessions/{id}    -> session detail
+POST /api/sessions/start   -> {prompt, provider?, model?} -> session
+POST /api/recipes/run      -> {recipe_path} -> session
+GET  /api/providers        -> provider list
+GET  /api/extensions       -> extension list
+
+## Session states
+
+running | completed | failed
+
+## goose config location
+
+~/.config/goose/config.yaml (Linux/Mac)
+%USERPROFILE%\.config\goose\config.yaml (Windows)
+
+## Environment variables
+
+GOOSE_BIN              — path to goose binary
+GOOSE_MCP_DATA_DIR     — session log directory (default: ./data)
+GOOSE_MCP_BACKEND_PORT — default 10948
+GOOSE_MCP_FRONTEND_PORT — default 10949
+GOOSE_MCP_LOG_LEVEL    — default INFO
+GOOSE_PREFAB_APPS      — set to 0 to disable Prefab UI tools

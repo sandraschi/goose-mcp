@@ -1,0 +1,16 @@
+{
+  "name": "goose-mcp",
+  "version": "0.1.0",
+  "description": "MCP server wrapping the goose CLI — sessions, recipes, providers, extensions",
+  "author": "sandraschi",
+  "license": "MIT",
+  "homepage": "https://github.com/sandraschi/goose-mcp",
+  "mcp": {
+    "transport": ["stdio", "http"],
+    "http_path": "/mcp"
+  },
+  "scripts": {
+    "stdio": "uv run python -m goose_mcp.server",
+    "http": "uv run python -m goose_mcp.api"
+  }
+}

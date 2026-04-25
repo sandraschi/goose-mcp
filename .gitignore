@@ -1,0 +1,32 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.eggs/
+
+# uv
+uv.lock
+
+# Frontend
+webapp/node_modules/
+webapp/dist/
+dist/
+
+# Runtime
+backend.log
+data/*.log
+data/*.db
+!data/.gitkeep
+
+# Env
+.env
+
+# IDE
+.vscode/
+.cursor/
+*.bak
+
+# Build artifacts
+*.mcpb
