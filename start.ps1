@@ -189,12 +189,6 @@ if (-not $ready) {
 }
 Write-Host "  [ok] Backend healthy after ${waited}s" -ForegroundColor Green
 
-$frontendProc = Start-Process -FilePath $npmCmd `
-    -ArgumentList "run", "dev" `
-    -WorkingDirectory $WebRoot `
-    -PassThru
-Write-Host "  Frontend PID $($frontendProc.Id) on :$FrontendPort" -ForegroundColor DarkGray
-
 if (-not $NoBrowser) {
     $url = "http://localhost:$FrontendPort"
     $poll = "for (`$i=0;`$i -lt 60;`$i++) { try { `$null=Invoke-WebRequest -Uri '$url' -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop; Start-Process '$url'; exit } catch { Start-Sleep 1 } }"
@@ -208,6 +202,7 @@ Write-Host "  Backend   http://localhost:$BackendPort"
 Write-Host "  Frontend  http://localhost:$FrontendPort"
 Write-Host "  MCP HTTP  http://localhost:$BackendPort/mcp"
 Write-Host ""
-Write-Host "Press Ctrl+C to stop." -ForegroundColor DarkGray
+Write-Host "Press Ctrl+C to stop (blocks on Vite)." -ForegroundColor DarkGray
 
-try { Wait-Process -Id $backendProc.Id -ErrorAction SilentlyContinue } catch {}
+Set-Location $WebRoot
+npm run dev -- --host 127.0.0.1 --port $FrontendPort --strictPort

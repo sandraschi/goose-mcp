@@ -1,5 +1,9 @@
-# goose-mcp justfile
+﻿# goose-mcp justfile
 set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
+
+# Open the interactive recipe dashboard in the browser
+default:
+    @just --list
 
 UV   := "C:\\Users\\sandr\\.local\\bin\\uv.exe"
 REPO := "D:\\Dev\\repos\\goose-mcp"
@@ -41,8 +45,15 @@ fmt:
 typecheck:
     & "{{UV}}" run ty check src/ --ignore-errors
 
+# ── Testing ──────────────────────────────────────────────────────────────────
+
+# Run e2e Playwright tests
+e2e:
+    pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
+
 # Build .mcpb bundle
 pack:
     New-Item -ItemType Directory -Force -Path "{{REPO}}\\dist" | Out-Null
     mcpb pack "{{REPO}}" "{{REPO}}\\dist\\goose-mcp-v0.1.0.mcpb"
     Write-Host "Bundle: {{REPO}}\\dist\\goose-mcp-v0.1.0.mcpb"
+
