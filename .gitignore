@@ -28,5 +28,13 @@ data/*.db
 .cursor/
 *.bak
 
+# Dashboard cache
+_dashboard/
+
+# Rust / Tauri native builds
+native/target/
+native/gen/
+native/binaries/
+
 # Build artifacts
 *.mcpb

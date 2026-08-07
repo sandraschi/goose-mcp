@@ -1,5 +1,6 @@
-﻿# goose-mcp justfile
+# goose-mcp justfile
 set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
+import 'scripts/just/fleet.just'
 
 # Open the interactive recipe dashboard in the browser
 default:
@@ -45,11 +46,11 @@ fmt:
 typecheck:
     & "{{UV}}" run ty check src/ --ignore-errors
 
-# ── Testing ──────────────────────────────────────────────────────────────────
+# --- Testing ---
 
 # Run e2e Playwright tests
 e2e:
-    pwsh -NoLogo -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
+    powershell.exe -NoProfile -NoProfile -ExecutionPolicy Bypass -File "D:\Dev\repos\mcp-central-docs\scripts\playwright-audit.ps1" -RepoPath "{{justfile_directory()}}"
 
 # Build .mcpb bundle
 pack:
@@ -57,3 +58,8 @@ pack:
     mcpb pack "{{REPO}}" "{{REPO}}\\dist\\goose-mcp-v0.1.0.mcpb"
     Write-Host "Bundle: {{REPO}}\\dist\\goose-mcp-v0.1.0.mcpb"
 
+# Bootstrap: install dev deps + pre-commit hook
+bootstrap:
+    uv sync --group dev
+    uv run pre-commit install
+    Write-Host "Pre-commit hooks installed." -ForegroundColor Green

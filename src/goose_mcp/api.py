@@ -7,7 +7,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
+from collections import deque
 from contextlib import asynccontextmanager
+from uuid import uuid4
 
 import uvicorn
 from starlette.applications import Starlette
@@ -21,6 +24,39 @@ from goose_mcp import goose_runner
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
+
+
+class ActivityLog:
+    def __init__(self, max_entries=2000):
+        self.max_entries = max_entries; self._entries = deque(maxlen=max_entries)
+    def add(self, level, kind, detail, meta=None):
+        eid = f"{time.time():.6f}.{uuid4().hex[:6]}"
+        self._entries.append({"id": eid, "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime()), "level": level.upper(), "kind": kind, "detail": detail, "meta": meta or {}})
+        return eid
+    def info(self, kind, detail, **meta): return self.add("INFO", kind, detail, meta)
+    def warn(self, kind, detail, **meta): return self.add("WARNING", kind, detail, meta)
+    def error(self, kind, detail, **meta): return self.add("ERROR", kind, detail, meta)
+    def query(self, limit=50, offset=0, level=None, kind=None, search=None, sort="desc", after_id=None):
+        entries = list(self._entries)
+        if after_id:
+            try: at = float(after_id.split(".")[0]); entries = [e for e in entries if float(e["id"].split(".")[0]) > at]
+            except: pass
+        if level:
+            lo = {"DEBUG":0,"INFO":1,"WARNING":2,"ERROR":3}; ml = lo.get(level.upper(),1)
+            entries = [e for e in entries if lo.get(e["level"],1) >= ml]
+        if kind: entries = [e for e in entries if e["kind"] == kind]
+        if search: q = search.lower(); entries = [e for e in entries if q in e["detail"].lower()]
+        entries.sort(key=lambda e: e["id"], reverse=(sort=="desc"))
+        total = len(entries); page = entries[offset:offset+limit]
+        return {"entries": page, "total": total, "limit": limit, "offset": offset, "max_entries": self.max_entries, "sort": sort}
+    def stats(self):
+        levels,kinds = {},{}
+        for e in self._entries: levels[e["level"]]=levels.get(e["level"],0)+1; kinds[e["kind"]]=kinds.get(e["kind"],0)+1
+        return {"total":len(self._entries),"max_entries":self.max_entries,"levels":levels,"kinds":kinds}
+    def clear(self): self._entries.clear()
+
+
+activity_log = ActivityLog()
 
 
 # ── Lifespan ───────────────────────────────────────────────────────────────────
@@ -128,6 +164,26 @@ async def providers_list(request: Request) -> JSONResponse:
     return JSONResponse({"providers": providers, "count": len(providers)})
 
 
+async def api_log_query(request: Request) -> JSONResponse:
+    limit = int(request.query_params.get("limit", 50))
+    offset = int(request.query_params.get("offset", 0))
+    level = request.query_params.get("level")
+    kind = request.query_params.get("kind")
+    search = request.query_params.get("search")
+    sort = request.query_params.get("sort", "desc")
+    after_id = request.query_params.get("after_id")
+    return JSONResponse(activity_log.query(limit=limit, offset=offset, level=level, kind=kind, search=search, sort=sort, after_id=after_id))
+
+
+async def api_log_stats(request: Request) -> JSONResponse:
+    return JSONResponse(activity_log.stats())
+
+
+async def api_log_clear(request: Request) -> JSONResponse:
+    activity_log.clear()
+    return JSONResponse({"success": True})
+
+
 async def extensions_list(request: Request) -> JSONResponse:
     goose_bin = goose_runner.find_goose_bin(cfg.goose_bin) or ""
     extensions = await goose_runner.list_extensions(goose_bin)
@@ -146,6 +202,9 @@ routes = [
     Route("/api/recipes/run",   recipe_run,     methods=["POST"]),
     Route("/api/providers",     providers_list, methods=["GET"]),
     Route("/api/extensions",    extensions_list,methods=["GET"]),
+    Route("/api/logs",          api_log_query,  methods=["GET"]),
+    Route("/api/logs/stats",    api_log_stats,  methods=["GET"]),
+    Route("/api/logs/clear",    api_log_clear,  methods=["POST"]),
 ]
 
 # Mount MCP ASGI server at /mcp

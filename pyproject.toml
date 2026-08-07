@@ -9,7 +9,7 @@ description = "MCP server wrapping the goose CLI — sessions, recipes, provider
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "fastmcp>=3.2.0",
+    "fastmcp>=3.4.4,<4",
     "prefab-ui>=0.14.0",
     "starlette>=1.0.0",
     "uvicorn[standard]>=0.34.0",
@@ -19,12 +19,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "ruff>=0.11.0",
-    "ty>=0.0.1a0",
-    "pytest>=8.3.0",
-    "pytest-asyncio>=0.25.0",
-]
+test = ["pytest>=8.0", "pytest-asyncio", "httpx"]
+dev = ["ruff>=0.16.0,<0.17", "mypy"]
 
 [project.scripts]
 goose-mcp = "goose_mcp.server:main"

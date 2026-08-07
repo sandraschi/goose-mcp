@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient, QueryClient, QueryClientProvider
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { Play, RefreshCw } from 'lucide-react'
+import { API_BASE } from '../lib/api'
 
 const qc = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 5_000 } } })
 
@@ -20,20 +21,20 @@ function Inner() {
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['sessions'],
-    queryFn: () => fetch('/api/sessions?limit=50').then(r => r.json()),
+    queryFn: () => fetch(API_BASE + '/api/sessions?limit=50').then(r => r.json()),
     refetchInterval: 3_000,
   })
 
   const { data: detail, isLoading: detailLoading } = useQuery({
     queryKey: ['session', selected?.id],
-    queryFn: () => fetch(`/api/sessions/${selected.id}`).then(r => r.json()),
+    queryFn: () => fetch(API_BASE + `/api/sessions/${selected.id}`).then(r => r.json()),
     enabled: !!selected?.id,
     refetchInterval: selected?.status === 'running' ? 2_000 : false,
   })
 
   const start = useMutation({
     mutationFn: (body: object) =>
-      fetch('/api/sessions/start', {
+      fetch(API_BASE + '/api/sessions/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

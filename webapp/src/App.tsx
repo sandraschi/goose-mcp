@@ -2,12 +2,13 @@ import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Terminal, BookOpen, Cpu, Puzzle,
-  Wrench, MessageSquare, Activity, ChevronLeft, ChevronRight
+  Wrench, MessageSquare, Activity, ChevronLeft, ChevronRight, List
 } from 'lucide-react'
 import { useState } from 'react'
 import clsx from 'clsx'
 
 import Dashboard from './pages/Dashboard'
+import LogsPage from './pages/LogsPage'
 import SessionsPage from './pages/SessionsPage'
 import RecipesPage from './pages/RecipesPage'
 import ProvidersPage from './pages/ProvidersPage'
@@ -24,6 +25,7 @@ const NAV = [
   { to: '/extensions',  label: 'Extensions',  icon: Puzzle },
   { to: '/tools',       label: 'Tools',       icon: Wrench },
   { to: '/chat',        label: 'Chat',        icon: MessageSquare },
+  { to: '/logs',        label: 'Logs',        icon: List },
   { to: '/status',      label: 'Status',      icon: Activity },
 ]
 
@@ -100,6 +102,7 @@ export default function App() {
               <Route path="/extensions" element={<ExtensionsPage />} />
               <Route path="/tools"      element={<ToolsPage />} />
               <Route path="/chat"       element={<ChatPage />} />
+              <Route path="/logs"       element={<LogsPage />} />
               <Route path="/status"     element={<StatusPage />} />
             </Routes>
           </AnimatePresence>
