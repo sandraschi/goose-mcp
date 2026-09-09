@@ -23,7 +23,7 @@ just serve       # start the server
 just web         # start the frontend (if applicable)
 ```
 
-> **Why not `pip install`?** MCP servers bundle webapps, configs, project scaffolding, and tooling that a flat Python package can't deliver. PyPI offers no safety advantage — it doesn't audit packages either. `just` gives you the complete, ready-to-run stack.
+> **Why not `pip install`?** MCP servers bundle webapps, configs, project scaffolding, and tooling that a flat Python package can't deliver. PyPI offers no safety advantage - it doesn't audit packages either. `just` gives you the complete, ready-to-run stack.
 
 ---
 
@@ -66,7 +66,7 @@ If you prefer not to use `just`:
 | Issue | Fix |
 |---|---|
 | `just` not found | Install via `winget install Casey.Just`, `scoop install just`, or `brew install just` |
-| Port conflict | Run `just kill-all` to clear fleet ports (10700–11000) |
+| Port conflict | Run `just kill-all` to clear fleet ports (10700-11000) |
 | Dependencies out of sync | `uv sync --all-extras` |
 | Something else | [Open a GitHub issue](https://github.com/sandraschi/goose-mcp/issues) |
 
@@ -80,7 +80,7 @@ If you prefer not to use `just`:
 
 _This INSTALL.md was updated with the standard fleet Quick Start template. The original instructions are preserved below._
 
-# goose-mcp ÔÇö Install Guide
+# goose-mcp - Install Guide
 
 ## Quick start (two commands)
 
@@ -106,7 +106,7 @@ D:\Dev\repos\goose-mcp\start.bat
 |------|--------------------|---------------|
 | uv | Yes | winget / start.bat |
 | Node.js | Yes | winget / start.bat |
-| vite | No ÔÇö local devDep | npm install |
+| vite | No - local devDep | npm install |
 | goose | Yes | https://goose-docs.ai |
 
 ## goose not found?
