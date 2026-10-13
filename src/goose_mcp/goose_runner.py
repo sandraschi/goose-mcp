@@ -1,18 +1,16 @@
 """
-goose CLI wrapper — subprocess management, binary detection, session tracking.
+goose CLI wrapper - subprocess management, binary detection, session tracking.
 """
+
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
-import platform
 import shutil
 import uuid
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone
-from typing import Optional
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 
 log = logging.getLogger(__name__)
 
@@ -20,16 +18,16 @@ log = logging.getLogger(__name__)
 @dataclass
 class SessionRecord:
     id: str
-    status: str          # running | completed | failed
+    status: str  # running | completed | failed
     prompt: str
-    recipe: Optional[str]
-    provider: Optional[str]
-    model: Optional[str]
+    recipe: str | None
+    provider: str | None
+    model: str | None
     started_at: str
-    ended_at: Optional[str] = None
+    ended_at: str | None = None
     output: str = ""
-    exit_code: Optional[int] = None
-    pid: Optional[int] = None
+    exit_code: int | None = None
+    pid: int | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -41,7 +39,7 @@ _sessions: dict[str, SessionRecord] = {}
 _procs: dict[str, asyncio.subprocess.Process] = {}
 
 
-def find_goose_bin(override: str = "") -> Optional[str]:
+def find_goose_bin(override: str = "") -> str | None:
     """Locate the goose binary. Returns None if not found."""
     if override:
         if os.path.isfile(override):
@@ -69,7 +67,8 @@ async def goose_version(goose_bin: str) -> dict:
     """Run `goose --version` and return parsed info."""
     try:
         proc = await asyncio.create_subprocess_exec(
-            goose_bin, "--version",
+            goose_bin,
+            "--version",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -88,13 +87,20 @@ async def list_providers(goose_bin: str) -> list[dict]:
     if config_path and os.path.isfile(config_path):
         try:
             import re
-            with open(config_path, "r", encoding="utf-8") as f:
+
+            with open(config_path, encoding="utf-8") as f:
                 raw = f.read()
             # YAML-ish parse: look for provider: lines
             for m in re.finditer(r"provider:\s*(\S+)", raw):
                 providers.append({"name": m.group(1)})
             if not providers:
-                providers.append({"name": "unknown", "config_path": config_path, "note": "config found but no provider lines parsed"})
+                providers.append(
+                    {
+                        "name": "unknown",
+                        "config_path": config_path,
+                        "note": "config found but no provider lines parsed",
+                    }
+                )
         except Exception as exc:
             providers.append({"error": str(exc)})
     else:
@@ -109,7 +115,8 @@ async def list_extensions(goose_bin: str) -> list[dict]:
     if config_path and os.path.isfile(config_path):
         try:
             import re
-            with open(config_path, "r", encoding="utf-8") as f:
+
+            with open(config_path, encoding="utf-8") as f:
                 raw = f.read()
             for m in re.finditer(r"name:\s*(\S+)", raw):
                 extensions.append({"name": m.group(1)})
@@ -122,13 +129,13 @@ async def start_session(
     goose_bin: str,
     data_dir: str,
     prompt: str,
-    provider: Optional[str] = None,
-    model: Optional[str] = None,
-    recipe_path: Optional[str] = None,
+    provider: str | None = None,
+    model: str | None = None,
+    recipe_path: str | None = None,
 ) -> SessionRecord:
     """Spawn `goose run` with the given prompt or recipe."""
     session_id = str(uuid.uuid4())[:8]
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     args = [goose_bin, "run"]
     if provider:
@@ -170,7 +177,7 @@ async def start_session(
     except Exception as exc:
         rec.status = "failed"
         rec.output = str(exc)
-        rec.ended_at = datetime.now(timezone.utc).isoformat()
+        rec.ended_at = datetime.now(UTC).isoformat()
         log.error("Session %s failed to start: %s", session_id, exc)
 
     return rec
@@ -189,9 +196,9 @@ async def _watch_session(
         if rec:
             rec.exit_code = proc.returncode
             rec.status = "completed" if proc.returncode == 0 else "failed"
-            rec.ended_at = datetime.now(timezone.utc).isoformat()
+            rec.ended_at = datetime.now(UTC).isoformat()
             if os.path.isfile(log_path):
-                with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                with open(log_path, encoding="utf-8", errors="replace") as f:
                     rec.output = f.read()[-8000:]  # keep last 8k chars
         _procs.pop(session_id, None)
         log.info("Session %s finished (exit %s)", session_id, proc.returncode)
@@ -199,7 +206,7 @@ async def _watch_session(
         log.error("Session watcher error for %s: %s", session_id, exc)
 
 
-def get_session(session_id: str) -> Optional[SessionRecord]:
+def get_session(session_id: str) -> SessionRecord | None:
     return _sessions.get(session_id)
 
 
@@ -208,7 +215,9 @@ def list_sessions(limit: int = 20) -> list[SessionRecord]:
     return all_s[:limit]
 
 
-async def run_recipe(goose_bin: str, data_dir: str, recipe_path: str, params: dict | None = None) -> SessionRecord:
+async def run_recipe(
+    goose_bin: str, data_dir: str, recipe_path: str, params: dict | None = None
+) -> SessionRecord:
     """Run a goose recipe YAML by path."""
     return await start_session(
         goose_bin=goose_bin,
@@ -218,7 +227,7 @@ async def run_recipe(goose_bin: str, data_dir: str, recipe_path: str, params: di
     )
 
 
-def _goose_config_path() -> Optional[str]:
+def _goose_config_path() -> str | None:
     """Return path to goose config file."""
     # goose stores config in ~/.config/goose/config.yaml
     home = os.path.expanduser("~")

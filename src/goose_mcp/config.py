@@ -1,10 +1,13 @@
 """
-goose-mcp configuration — reads from .env or environment.
+goose-mcp configuration - reads from .env or environment.
 """
+
 from __future__ import annotations
+
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import lru_cache
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,7 +20,7 @@ class Settings:
     backend_port: int = 10948
     frontend_port: int = 10949
 
-    # Path to goose binary — auto-detected if not set
+    # Path to goose binary - auto-detected if not set
     goose_bin: str = ""
 
     # Data dir for session logs

@@ -1,10 +1,12 @@
 """
-FastMCP 3.2 MCP server — tools, prompts, resources, Prefab UI.
+FastMCP 3.2 MCP server - tools, prompts, resources, Prefab UI.
 """
+
 from __future__ import annotations
 
 import logging
-from fastmcp import FastMCP, Context
+
+from fastmcp import Context, FastMCP
 from fastmcp.server.lifespan import lifespan
 from prefab_ui.app import PrefabApp
 
@@ -18,6 +20,7 @@ cfg = get_settings()
 @lifespan
 async def _startup(_server):
     import os
+
     os.makedirs(cfg.data_dir, exist_ok=True)
     log.info("goose-mcp startup: data_dir=%s", cfg.data_dir)
     yield {}
@@ -36,13 +39,16 @@ mcp = FastMCP(
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
+
 def _runner():
     from goose_mcp import goose_runner
+
     return goose_runner
 
 
 def _bin() -> str:
     from goose_mcp.goose_runner import find_goose_bin
+
     b = find_goose_bin(cfg.goose_bin)
     if not b:
         raise RuntimeError(
@@ -53,6 +59,7 @@ def _bin() -> str:
 
 
 # ── Tools ──────────────────────────────────────────────────────────────────────
+
 
 @mcp.tool()
 async def goose_version(ctx: Context) -> dict:
@@ -160,7 +167,7 @@ async def goose_recipe_run(
     """
     Run a goose recipe YAML file.
 
-    Rationale: Recipes are portable YAML workflows — run one by local path.
+    Rationale: Recipes are portable YAML workflows - run one by local path.
 
     Args:
         recipe_path: Absolute path to the recipe .yaml file.
@@ -168,6 +175,7 @@ async def goose_recipe_run(
     Returns: dict with session id and status.
     """
     import os
+
     if not os.path.isfile(recipe_path):
         return {"error": f"Recipe not found: {recipe_path}"}
     runner = _runner()
@@ -217,26 +225,34 @@ if cfg.goose_prefab_apps:
     async def show_sessions_card(ctx: Context) -> PrefabApp:
         """Show recent goose sessions as a rich Prefab card."""
         from prefab_ui.components import (
-            Badge, Card, CardContent, Column, Grid, Heading, Muted, Separator, Text
+            Badge,
+            Card,
+            CardContent,
+            Column,
+            Grid,
+            Heading,
+            Muted,
+            Separator,
+            Text,
         )
+
         runner = _runner()
         sessions = runner.list_sessions(10)
 
         status_variant = {"running": "warning", "completed": "secondary", "failed": "destructive"}
 
         with Column(gap=4, css_class="p-4") as view:
-            Heading("goose — Recent Sessions")
+            Heading("goose - Recent Sessions")
             Separator()
             if not sessions:
                 Muted("No sessions yet. Use goose_session_start to run a task.")
             else:
                 for s in sessions:
-                    with Card():
-                        with CardContent(css_class="pt-3"):
-                            with Grid(columns=2, gap=2):
-                                Text(s.prompt[:60] + ("…" if len(s.prompt) > 60 else ""))
-                                Badge(s.status, variant=status_variant.get(s.status, "secondary"))
-                            Muted(f"id:{s.id}  started:{s.started_at[:19]}")
+                    with Card(), CardContent(css_class="pt-3"):
+                        with Grid(columns=2, gap=2):
+                            Text(s.prompt[:60] + ("…" if len(s.prompt) > 60 else ""))
+                            Badge(s.status, variant=status_variant.get(s.status, "secondary"))
+                        Muted(f"id:{s.id}  started:{s.started_at[:19]}")
 
         return PrefabApp(view=view, title="goose Sessions")
 
@@ -244,8 +260,16 @@ if cfg.goose_prefab_apps:
     async def show_goose_status_card(ctx: Context) -> PrefabApp:
         """Show goose installation status as a Prefab card."""
         from prefab_ui.components import (
-            Badge, Card, CardContent, Column, Grid, Heading, Muted, Separator
+            Badge,
+            Card,
+            CardContent,
+            Column,
+            Grid,
+            Heading,
+            Muted,
+            Separator,
         )
+
         runner = _runner()
         try:
             b = _bin()
@@ -259,33 +283,33 @@ if cfg.goose_prefab_apps:
         failed = sum(1 for s in sessions if s.status == "failed")
 
         with Column(gap=4, css_class="p-4") as view:
-            Heading("goose — Status")
+            Heading("goose - Status")
             Separator()
             with Grid(columns=2, gap=3):
-                with Card():
-                    with CardContent(css_class="pt-4"):
-                        Muted("goose Binary")
-                        Badge("available" if info.get("available") else "not found",
-                              variant="secondary" if info.get("available") else "destructive")
-                with Card():
-                    with CardContent(css_class="pt-4"):
-                        Muted("Version")
-                        Muted(info.get("raw", "—")[:40])
+                with Card(), CardContent(css_class="pt-4"):
+                    Muted("goose Binary")
+                    Badge(
+                        "available" if info.get("available") else "not found",
+                        variant="secondary" if info.get("available") else "destructive",
+                    )
+                with Card(), CardContent(css_class="pt-4"):
+                    Muted("Version")
+                    Muted(info.get("raw", "-")[:40])
             with Grid(columns=3, gap=3):
-                for label, val, variant in [
+                for label, val, _variant in [
                     ("Running", str(running), "warning"),
                     ("Completed", str(completed), "secondary"),
                     ("Failed", str(failed), "destructive"),
                 ]:
-                    with Card():
-                        with CardContent(css_class="pt-4"):
-                            Muted(label)
-                            Heading(val)
+                    with Card(), CardContent(css_class="pt-4"):
+                        Muted(label)
+                        Heading(val)
 
         return PrefabApp(view=view, title="goose Status")
 
 
 # ── Prompts ────────────────────────────────────────────────────────────────────
+
 
 @mcp.prompt()
 async def goose_fleet_task_template() -> str:
@@ -301,9 +325,11 @@ async def goose_fleet_task_template() -> str:
 
 # ── Resources ─────────────────────────────────────────────────────────────────
 
+
 @mcp.resource("goose://sessions/list")
 async def resource_sessions() -> str:
     import json
+
     runner = _runner()
     sessions = [s.to_dict() for s in runner.list_sessions(50)]
     return json.dumps(sessions, indent=2, default=str)
@@ -311,8 +337,10 @@ async def resource_sessions() -> str:
 
 # ── Entry point ────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     import logging as _logging
+
     _logging.basicConfig(level=getattr(_logging, cfg.log_level.upper(), _logging.INFO))
     mcp.run()
 

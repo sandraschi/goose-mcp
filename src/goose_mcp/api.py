@@ -1,10 +1,10 @@
 """
 Starlette 1.0 REST backend for goose-mcp webapp.
-No FastAPI, no Pydantic — plain dicts, dataclasses, lifespan pattern.
+No FastAPI, no Pydantic - plain dicts, dataclasses, lifespan pattern.
 """
+
 from __future__ import annotations
 
-import json
 import logging
 import os
 import time
@@ -16,11 +16,11 @@ import uvicorn
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from starlette.routing import Mount, Route
+from starlette.routing import Route
 from starlette.staticfiles import StaticFiles
 
-from goose_mcp.config import get_settings
 from goose_mcp import goose_runner
+from goose_mcp.config import get_settings
 
 log = logging.getLogger(__name__)
 cfg = get_settings()
@@ -28,38 +28,84 @@ cfg = get_settings()
 
 class ActivityLog:
     def __init__(self, max_entries=2000):
-        self.max_entries = max_entries; self._entries = deque(maxlen=max_entries)
+        self.max_entries = max_entries
+        self._entries = deque(maxlen=max_entries)
+
     def add(self, level, kind, detail, meta=None):
         eid = f"{time.time():.6f}.{uuid4().hex[:6]}"
-        self._entries.append({"id": eid, "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime()), "level": level.upper(), "kind": kind, "detail": detail, "meta": meta or {}})
+        self._entries.append(
+            {
+                "id": eid,
+                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime()),
+                "level": level.upper(),
+                "kind": kind,
+                "detail": detail,
+                "meta": meta or {},
+            }
+        )
         return eid
-    def info(self, kind, detail, **meta): return self.add("INFO", kind, detail, meta)
-    def warn(self, kind, detail, **meta): return self.add("WARNING", kind, detail, meta)
-    def error(self, kind, detail, **meta): return self.add("ERROR", kind, detail, meta)
-    def query(self, limit=50, offset=0, level=None, kind=None, search=None, sort="desc", after_id=None):
+
+    def info(self, kind, detail, **meta):
+        return self.add("INFO", kind, detail, meta)
+
+    def warn(self, kind, detail, **meta):
+        return self.add("WARNING", kind, detail, meta)
+
+    def error(self, kind, detail, **meta):
+        return self.add("ERROR", kind, detail, meta)
+
+    def query(
+        self, limit=50, offset=0, level=None, kind=None, search=None, sort="desc", after_id=None
+    ):
         entries = list(self._entries)
         if after_id:
-            try: at = float(after_id.split(".")[0]); entries = [e for e in entries if float(e["id"].split(".")[0]) > at]
-            except: pass
+            try:
+                at = float(after_id.split(".")[0])
+                entries = [e for e in entries if float(e["id"].split(".")[0]) > at]
+            except Exception:
+                pass
         if level:
-            lo = {"DEBUG":0,"INFO":1,"WARNING":2,"ERROR":3}; ml = lo.get(level.upper(),1)
-            entries = [e for e in entries if lo.get(e["level"],1) >= ml]
-        if kind: entries = [e for e in entries if e["kind"] == kind]
-        if search: q = search.lower(); entries = [e for e in entries if q in e["detail"].lower()]
-        entries.sort(key=lambda e: e["id"], reverse=(sort=="desc"))
-        total = len(entries); page = entries[offset:offset+limit]
-        return {"entries": page, "total": total, "limit": limit, "offset": offset, "max_entries": self.max_entries, "sort": sort}
+            lo = {"DEBUG": 0, "INFO": 1, "WARNING": 2, "ERROR": 3}
+            ml = lo.get(level.upper(), 1)
+            entries = [e for e in entries if lo.get(e["level"], 1) >= ml]
+        if kind:
+            entries = [e for e in entries if e["kind"] == kind]
+        if search:
+            q = search.lower()
+            entries = [e for e in entries if q in e["detail"].lower()]
+        entries.sort(key=lambda e: e["id"], reverse=(sort == "desc"))
+        total = len(entries)
+        page = entries[offset : offset + limit]
+        return {
+            "entries": page,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "max_entries": self.max_entries,
+            "sort": sort,
+        }
+
     def stats(self):
-        levels,kinds = {},{}
-        for e in self._entries: levels[e["level"]]=levels.get(e["level"],0)+1; kinds[e["kind"]]=kinds.get(e["kind"],0)+1
-        return {"total":len(self._entries),"max_entries":self.max_entries,"levels":levels,"kinds":kinds}
-    def clear(self): self._entries.clear()
+        levels, kinds = {}, {}
+        for e in self._entries:
+            levels[e["level"]] = levels.get(e["level"], 0) + 1
+            kinds[e["kind"]] = kinds.get(e["kind"], 0) + 1
+        return {
+            "total": len(self._entries),
+            "max_entries": self.max_entries,
+            "levels": levels,
+            "kinds": kinds,
+        }
+
+    def clear(self):
+        self._entries.clear()
 
 
 activity_log = ActivityLog()
 
 
 # ── Lifespan ───────────────────────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(app):
@@ -71,6 +117,7 @@ async def lifespan(app):
 
 # ── Route handlers ─────────────────────────────────────────────────────────────
 
+
 async def health(request: Request) -> JSONResponse:
     return JSONResponse({"status": "ok", "service": "goose-mcp"})
 
@@ -78,14 +125,16 @@ async def health(request: Request) -> JSONResponse:
 async def capabilities(request: Request) -> JSONResponse:
     """Runtime feature flags consumed by the webapp."""
     goose_bin = goose_runner.find_goose_bin(cfg.goose_bin)
-    return JSONResponse({
-        "goose_available": goose_bin is not None,
-        "goose_bin": goose_bin or "",
-        "data_dir": cfg.data_dir,
-        "prefab_apps": cfg.goose_prefab_apps,
-        "backend_port": cfg.backend_port,
-        "frontend_port": cfg.frontend_port,
-    })
+    return JSONResponse(
+        {
+            "goose_available": goose_bin is not None,
+            "goose_bin": goose_bin or "",
+            "data_dir": cfg.data_dir,
+            "prefab_apps": cfg.goose_prefab_apps,
+            "backend_port": cfg.backend_port,
+            "frontend_port": cfg.frontend_port,
+        }
+    )
 
 
 async def version(request: Request) -> JSONResponse:
@@ -100,10 +149,12 @@ async def version(request: Request) -> JSONResponse:
 async def sessions_list(request: Request) -> JSONResponse:
     limit = int(request.query_params.get("limit", 20))
     sessions = goose_runner.list_sessions(limit)
-    return JSONResponse({
-        "sessions": [s.to_dict() for s in sessions],
-        "count": len(sessions),
-    })
+    return JSONResponse(
+        {
+            "sessions": [s.to_dict() for s in sessions],
+            "count": len(sessions),
+        }
+    )
 
 
 async def session_get(request: Request) -> JSONResponse:
@@ -126,7 +177,9 @@ async def session_start(request: Request) -> JSONResponse:
 
     goose_bin = goose_runner.find_goose_bin(cfg.goose_bin)
     if not goose_bin:
-        return JSONResponse({"error": "goose binary not found — install goose first"}, status_code=503)
+        return JSONResponse(
+            {"error": "goose binary not found - install goose first"}, status_code=503
+        )
 
     rec = await goose_runner.start_session(
         goose_bin=goose_bin,
@@ -135,7 +188,9 @@ async def session_start(request: Request) -> JSONResponse:
         provider=data.get("provider") or None,
         model=data.get("model") or None,
     )
-    return JSONResponse({"id": rec.id, "status": rec.status, "pid": rec.pid, "started_at": rec.started_at})
+    return JSONResponse(
+        {"id": rec.id, "status": rec.status, "pid": rec.pid, "started_at": rec.started_at}
+    )
 
 
 async def recipe_run(request: Request) -> JSONResponse:
@@ -154,7 +209,9 @@ async def recipe_run(request: Request) -> JSONResponse:
     if not goose_bin:
         return JSONResponse({"error": "goose binary not found"}, status_code=503)
 
-    rec = await goose_runner.run_recipe(goose_bin=goose_bin, data_dir=cfg.data_dir, recipe_path=recipe_path)
+    rec = await goose_runner.run_recipe(
+        goose_bin=goose_bin, data_dir=cfg.data_dir, recipe_path=recipe_path
+    )
     return JSONResponse({"id": rec.id, "status": rec.status, "recipe": recipe_path})
 
 
@@ -172,7 +229,17 @@ async def api_log_query(request: Request) -> JSONResponse:
     search = request.query_params.get("search")
     sort = request.query_params.get("sort", "desc")
     after_id = request.query_params.get("after_id")
-    return JSONResponse(activity_log.query(limit=limit, offset=offset, level=level, kind=kind, search=search, sort=sort, after_id=after_id))
+    return JSONResponse(
+        activity_log.query(
+            limit=limit,
+            offset=offset,
+            level=level,
+            kind=kind,
+            search=search,
+            sort=sort,
+            after_id=after_id,
+        )
+    )
 
 
 async def api_log_stats(request: Request) -> JSONResponse:
@@ -193,30 +260,32 @@ async def extensions_list(request: Request) -> JSONResponse:
 # ── App ────────────────────────────────────────────────────────────────────────
 
 routes = [
-    Route("/api/health",        health),
-    Route("/api/capabilities",  capabilities),
-    Route("/api/version",       version),
-    Route("/api/sessions",      sessions_list,  methods=["GET"]),
-    Route("/api/sessions/start",session_start,  methods=["POST"]),
+    Route("/api/health", health),
+    Route("/api/capabilities", capabilities),
+    Route("/api/version", version),
+    Route("/api/sessions", sessions_list, methods=["GET"]),
+    Route("/api/sessions/start", session_start, methods=["POST"]),
     Route("/api/sessions/{session_id}", session_get, methods=["GET"]),
-    Route("/api/recipes/run",   recipe_run,     methods=["POST"]),
-    Route("/api/providers",     providers_list, methods=["GET"]),
-    Route("/api/extensions",    extensions_list,methods=["GET"]),
-    Route("/api/logs",          api_log_query,  methods=["GET"]),
-    Route("/api/logs/stats",    api_log_stats,  methods=["GET"]),
-    Route("/api/logs/clear",    api_log_clear,  methods=["POST"]),
+    Route("/api/recipes/run", recipe_run, methods=["POST"]),
+    Route("/api/providers", providers_list, methods=["GET"]),
+    Route("/api/extensions", extensions_list, methods=["GET"]),
+    Route("/api/logs", api_log_query, methods=["GET"]),
+    Route("/api/logs/stats", api_log_stats, methods=["GET"]),
+    Route("/api/logs/clear", api_log_clear, methods=["POST"]),
 ]
 
 # Mount MCP ASGI server at /mcp
 from goose_mcp.server import mcp as _mcp_server
+
 _mcp_asgi = _mcp_server.http_app(path="/")
 
 app = Starlette(routes=routes, lifespan=lifespan)
 app.mount("/mcp", app=_mcp_asgi)
 
 # Serve built frontend if dist/ exists
-_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), "dist")
+_dist = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "dist"
+)
 if os.path.isdir(_dist):
     app.mount("/", StaticFiles(directory=_dist, html=True), name="spa")
 
