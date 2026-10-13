@@ -1,0 +1,30 @@
+{
+  "manifest_version": "0.2",
+  "name": "goose-mcp",
+  "version": "0.1.0",
+  "description": "MCP server wrapping the goose CLI — sessions, recipes, providers, extensions",
+  "author": { "name": "sandraschi" },
+  "server": {
+    "type": "python",
+    "entry_point": "src/goose_mcp/__main__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run","--directory","${PWD}","python","-m","goose_mcp"],
+      "env": {
+        "PYTHONPATH": "${PWD}/src",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "tools": [
+    { "name": "goose_version", "description": "goose_version" },
+    { "name": "goose_session_start", "description": "goose_session_start" },
+    { "name": "goose_session_status", "description": "goose_session_status" },
+    { "name": "goose_session_list", "description": "goose_session_list" },
+    { "name": "goose_recipe_run", "description": "goose_recipe_run" },
+    { "name": "goose_providers_list", "description": "goose_providers_list" },
+    { "name": "goose_extensions_list", "description": "goose_extensions_list" },
+    { "name": "show_sessions_card", "description": "show_sessions_card" },
+    { "name": "show_goose_status_card", "description": "show_goose_status_card" }
+  ]
+}
