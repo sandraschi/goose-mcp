@@ -294,7 +294,7 @@ def main() -> None:
     logging.basicConfig(level=getattr(logging, cfg.log_level.upper(), logging.INFO))
     uvicorn.run(
         "goose_mcp.api:app",
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=cfg.backend_port,
         log_level=cfg.log_level.lower(),
         reload=False,
